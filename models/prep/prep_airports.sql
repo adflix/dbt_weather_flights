@@ -10,4 +10,4 @@ WITH airports_reorder AS (
     FROM {{ref('staging_airports')}}
 )
 SELECT * 
-FROM airports_reorder;
+FROM airports_reorder
