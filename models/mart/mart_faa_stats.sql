@@ -1,47 +1,55 @@
+-- In a table `mart_faa_stats.sql` we want to see **for each airport over all time**:
+
+-- just checking source table
+-- SELECT * FROM prep_flights
+---------------------------------------------------
+/* THE ACTUAL QUERY */
+
+-- unique number of departures connections
 WITH departures AS (
-    SELECT origin AS faa
-           ,COUNT(origin) AS nunique_from 
-           ,COUNT(sched_dep_time) AS dep_planned 
-           ,SUM(cancelled) AS dep_cancelled 
-           ,SUM(diverted) AS dep_diverted 
-           ,COUNT(arr_time) AS dep_n_flights 
-           ,COUNT(DISTINCT tail_number) AS dep_nunique_tails 
-           ,COUNT(DISTINCT airline) AS dep_nunique_airlines 
-    FROM "hh_analytics_24_2"."s_timschulzeppers"."prep_flights"
-    GROUP BY origin
+					SELECT origin AS faa
+							,COUNT(origin) AS nunique_from 
+							,COUNT(sched_dep_time) AS dep_planned -- how many flight were planned in total (departures)
+							,SUM(cancelled) AS dep_cancelled -- how many flights were canceled in total (departures)
+							,SUM(diverted) AS dep_diverted -- how many flights were diverted in total (departures)
+							,COUNT(arr_time) AS dep_n_flights-- how many flights actually occured in total (departures)
+							,COUNT(DISTINCT tail_number) AS dep_nunique_tails -- *(optional) how many unique airplanes travelled on average*
+							,COUNT(DISTINCT airline) AS dep_nunique_airlines -- *(optional) how many unique airlines were in service  on average* 
+					FROM prep_flights
+					GROUP BY origin
 ),
+-- unique number of arrival connections
 arrivals AS (
-    SELECT dest AS faa
-           ,COUNT(dest) AS nunique_to 
-           ,COUNT(sched_dep_time) AS arr_planned 
-           ,SUM(cancelled) AS arr_cancelled 
-           ,SUM(diverted) AS arr_diverted 
-           ,COUNT(arr_time) AS arr_n_flights 
-           ,COUNT(DISTINCT tail_number) AS arr_nunique_tails 
-           ,COUNT(DISTINCT airline) AS arr_nunique_airlines 
-    FROM "hh_analytics_24_2"."s_timschulzeppers"."prep_flights"
-    GROUP BY dest
+					SELECT dest AS faa
+							,COUNT(dest) AS nunique_to 
+							,COUNT(sched_dep_time) AS arr_planned -- how many flight were planned in total (arrivals)
+							,SUM(cancelled) AS arr_cancelled -- how many flights were canceled in total (arrivals)
+							,SUM(diverted) AS arr_diverted -- how many flights were diverted in total (arrivals)
+							,COUNT(arr_time)  AS arr_n_flights -- how many flights actually occured in total (arrivals)
+							,COUNT(DISTINCT tail_number) AS arr_nunique_tails -- *(optional) how many unique airplanes travelled on average*
+							,COUNT(DISTINCT airline) AS arr_nunique_airlines -- *(optional) how many unique airlines were in service  on average* 
+					FROM prep_flights
+					GROUP BY dest
 ),
--- Abflüge + Ankünfte
 total_stats AS (
-    SELECT COALESCE(departures.faa, arrivals.faa) AS faa
-           ,COALESCE(nunique_to, 0) AS nunique_to
-           ,COALESCE(nunique_from, 0) AS nunique_from
-           ,COALESCE(dep_planned, 0) + COALESCE(arr_planned, 0) AS total_planned
-           ,COALESCE(dep_cancelled, 0) + COALESCE(arr_cancelled, 0) AS total_canceled
-           ,COALESCE(dep_diverted, 0) + COALESCE(arr_diverted, 0) AS total_diverted
-           ,COALESCE(dep_n_flights, 0) + COALESCE(arr_n_flights, 0) AS total_flights
-           ,COALESCE(dep_nunique_tails, 0) + COALESCE(arr_nunique_tails, 0) AS total_nunique_tails
-           ,COALESCE(dep_nunique_airlines, 0) + COALESCE(arr_nunique_airlines, 0) AS total_nunique_airlines
-    FROM departures
-    FULL JOIN arrivals ON departures.faa = arrivals.faa
+					SELECT faa
+							,nunique_to
+							,nunique_from
+							,dep_planned + arr_planned AS total_planed
+							,dep_cancelled + arr_cancelled AS total_canceled
+							,dep_diverted + arr_diverted AS total_diverted
+							,dep_n_flights + arr_n_flights AS total_flights
+					FROM departures
+					JOIN arrivals
+					-- ON arrivals.faa = departures.faa
+					USING (faa)
 )
--- Füge die Tabelle "airports" für Stadt, Land und Namen des Flughafens hinzu
-SELECT airports.city  
-       ,airports.country
-       ,airports.name
-       ,total_stats.*
-FROM total_stats
-LEFT JOIN "hh_analytics_24_2"."s_timschulzeppers"."airports" airports
-ON total_stats.faa = airports.faa
+-- add city, country and name of the airport
+SELECT city  
+		,country
+		,name
+		,total_stats.*
+FROM prep_airports
+RIGHT JOIN total_stats
+USING (faa)
 ORDER BY city
