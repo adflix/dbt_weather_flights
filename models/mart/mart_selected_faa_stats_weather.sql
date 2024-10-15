@@ -8,7 +8,7 @@ WITH departures AS (
            COUNT(arr_time) AS dep_n_flights,
            COUNT(DISTINCT tail_number) AS dep_nunique_tails, -- Optionale Spalte für einzigartige Flugzeuge
            COUNT(DISTINCT airline) AS dep_nunique_airlines -- Optionale Spalte für einzigartige Fluglinien
-    FROM {{ ref('prep_flights') }}
+    FROM "hh_analytics_24_2"."s_timschulzeppers"."prep_flights"
     GROUP BY flight_date, origin
 ),
 arrivals AS (
@@ -21,7 +21,7 @@ arrivals AS (
            COUNT(arr_time) AS arr_n_flights,
            COUNT(DISTINCT tail_number) AS arr_nunique_tails, -- Optionale Spalte für einzigartige Flugzeuge
            COUNT(DISTINCT airline) AS arr_nunique_airlines -- Optionale Spalte für einzigartige Fluglinien
-    FROM {{ ref('prep_flights') }}
+    FROM "hh_analytics_24_2"."s_timschulzeppers"."prep_flights"
     GROUP BY flight_date, dest
 ),
 total_stats AS (
@@ -41,7 +41,7 @@ total_stats AS (
     AND departures.flight_date = arrivals.flight_date
 ),
 weather_data AS (
-    SELECT station AS faa,
+    SELECT station_id AS faa,  -- Korrigiere den Spaltennamen
            date AS weather_date,
            MIN(temperature_min) AS daily_min_temp,
            MAX(temperature_max) AS daily_max_temp,
@@ -50,8 +50,8 @@ weather_data AS (
            AVG(wind_direction) AS daily_avg_wind_direction,
            AVG(wind_speed) AS daily_avg_wind_speed,
            MAX(wind_peakgust) AS daily_wind_peakgust
-    FROM {{ ref('prep_weather_daily') }} -- Verweis auf die prep_weather_daily-Tabelle
-    GROUP BY station, date
+    FROM "hh_analytics_24_2"."s_timschulzeppers"."prep_weather_daily" -- Verweis auf die prep_weather_daily-Tabelle
+    GROUP BY station_id, date
 )
 -- Endgültige Abfrage, die sowohl Flug- als auch Wetterdaten verbindet
 SELECT airports.city,
@@ -69,6 +69,6 @@ FROM total_stats
 LEFT JOIN weather_data
 ON total_stats.faa = weather_data.faa
 AND total_stats.flight_date = weather_data.weather_date
-LEFT JOIN {{ ref('prep_airports') }} airports
+LEFT JOIN "hh_analytics_24_2"."s_timschulzeppers"."prep_airports" airports
 ON total_stats.faa = airports.faa
 ORDER BY total_stats.flight_date, airports.city
