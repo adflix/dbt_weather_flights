@@ -52,4 +52,4 @@ SELECT city
 FROM {{ref('prep_flights')}}
 RIGHT JOIN total_stats
 USING (faa)
-ORDER BY city;
+ORDER BY city
