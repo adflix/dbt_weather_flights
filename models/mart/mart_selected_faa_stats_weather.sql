@@ -6,8 +6,8 @@ WITH departures AS (
            SUM(cancelled) AS dep_cancelled,
            SUM(diverted) AS dep_diverted,
            COUNT(arr_time) AS dep_n_flights,
-           COUNT(DISTINCT tail_number) AS dep_nunique_tails, -- optionale Spalte für einzigartige Flugzeuge
-           COUNT(DISTINCT airline) AS dep_nunique_airlines -- optionale Spalte für einzigartige Fluglinien
+           COUNT(DISTINCT tail_number) AS dep_nunique_tails,
+           COUNT(DISTINCT airline) AS dep_nunique_airlines
     FROM {{ ref('prep_flights') }}
     GROUP BY flight_date, origin
 ),
@@ -19,8 +19,8 @@ arrivals AS (
            SUM(cancelled) AS arr_cancelled,
            SUM(diverted) AS arr_diverted,
            COUNT(arr_time) AS arr_n_flights,
-           COUNT(DISTINCT tail_number) AS arr_nunique_tails, -- optionale Spalte für einzigartige Flugzeuge
-           COUNT(DISTINCT airline) AS arr_nunique_airlines -- optionale Spalte für einzigartige Fluglinien
+           COUNT(DISTINCT tail_number) AS arr_nunique_tails,
+           COUNT(DISTINCT airline) AS arr_nunique_airlines
     FROM {{ ref('prep_flights') }}
     GROUP BY flight_date, dest
 ),
@@ -33,8 +33,8 @@ total_stats AS (
            COALESCE(dep_cancelled, 0) + COALESCE(arr_cancelled, 0) AS total_canceled,
            COALESCE(dep_diverted, 0) + COALESCE(arr_diverted, 0) AS total_diverted,
            COALESCE(dep_n_flights, 0) + COALESCE(arr_n_flights, 0) AS total_flights,
-           COALESCE(dep_nunique_tails, 0) + COALESCE(arr_nunique_tails, 0) AS total_nunique_tails, -- optionale Spalte für einzigartige Flugzeuge
-           COALESCE(dep_nunique_airlines, 0) + COALESCE(arr_nunique_airlines, 0) AS total_nunique_airlines -- optionale Spalte für einzigartige Fluglinien
+           COALESCE(dep_nunique_tails, 0) + COALESCE(arr_nunique_tails, 0) AS total_nunique_tails,
+           COALESCE(dep_nunique_airlines, 0) + COALESCE(arr_nunique_airlines, 0) AS total_nunique_airlines
     FROM departures
     FULL JOIN arrivals
     ON departures.faa = arrivals.faa
@@ -50,7 +50,7 @@ weather_data AS (
            AVG(wind_direction) AS daily_avg_wind_direction,
            AVG(wind_speed) AS daily_avg_wind_speed,
            MAX(wind_peakgust) AS daily_wind_peakgust
-    FROM {{ ref('weather_daily_raw') }}
+    FROM {{ source('s_timschulzeppers', 'weather_daily_raw') }} -- Verweis auf das Schema und den Table
     GROUP BY station, date
 )
 -- Endgültige Abfrage, die sowohl Flug- als auch Wetterdaten verbindet
