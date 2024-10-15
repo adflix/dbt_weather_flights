@@ -22,7 +22,8 @@ arrivals AS (
     FROM {{ref('prep_flights')}}
     GROUP BY dest
 ),
-Abflüge + Ankünfte
+-- Abflüge + Ankünfte
+
 total_stats AS (
     SELECT COALESCE(departures.faa, arrivals.faa) AS faa
            ,COALESCE(nunique_to, 0) AS nunique_to
