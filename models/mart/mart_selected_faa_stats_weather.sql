@@ -50,7 +50,7 @@ weather_data AS (
            AVG(wind_direction) AS daily_avg_wind_direction,
            AVG(wind_speed) AS daily_avg_wind_speed,
            MAX(wind_peakgust) AS daily_wind_peakgust
-    FROM {{ ref('weather_daily') }}
+    FROM {{ ref('weather_daily_raw') }}
     GROUP BY station, date
 )
 -- Endgültige Abfrage, die sowohl Flug- als auch Wetterdaten verbindet
