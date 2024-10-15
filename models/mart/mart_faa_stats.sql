@@ -22,22 +22,25 @@ arrivals AS (
     FROM {{ref('prep_flights')}}
     GROUP BY dest
 ),
+Abflüge + Ankünfte
 total_stats AS (
-    SELECT faa
-           ,nunique_to
-           ,nunique_from
-           ,dep_planned + arr_planned AS total_planed
-           ,dep_cancelled + arr_cancelled AS total_canceled
-           ,dep_diverted + arr_diverted AS total_diverted
-           ,dep_n_flights + arr_n_flights AS total_flights
+    SELECT COALESCE(departures.faa, arrivals.faa) AS faa
+           ,COALESCE(nunique_to, 0) AS nunique_to
+           ,COALESCE(nunique_from, 0) AS nunique_from
+           ,COALESCE(dep_planned, 0) + COALESCE(arr_planned, 0) AS total_planned
+           ,COALESCE(dep_cancelled, 0) + COALESCE(arr_cancelled, 0) AS total_canceled
+           ,COALESCE(dep_diverted, 0) + COALESCE(arr_diverted, 0) AS total_diverted
+           ,COALESCE(dep_n_flights, 0) + COALESCE(arr_n_flights, 0) AS total_flights
+           ,COALESCE(dep_nunique_tails, 0) + COALESCE(arr_nunique_tails, 0) AS total_nunique_tails -- optionale Spalte für einzigartige Flugzeuge
+           ,COALESCE(dep_nunique_airlines, 0) + COALESCE(arr_nunique_airlines, 0) AS total_nunique_airlines -- optionale Spalte für einzigartige Fluglinien
     FROM departures
-    JOIN arrivals USING (faa)
+    FULL JOIN arrivals ON departures.faa = arrivals.faa
 )
--- PLUS Stadt, Land und Name des Flughafens
+-- Füge Stadt, Land und Namen des Flughafens hinzu
 SELECT city  
        ,country
        ,name
        ,total_stats.*
 FROM {{ref('prep_flights')}}
-RIGHT JOIN total_stats USING (faa)
+RIGHT JOIN total_stats ON {{ref('prep_flights')}}.origin = total_stats.faa OR {{ref('prep_flights')}}.dest = total_stats.faa
 ORDER BY city
