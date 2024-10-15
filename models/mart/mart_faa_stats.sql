@@ -1,7 +1,7 @@
 -- In a table `mart_faa_stats.sql` we want to see **for each airport over all time**:
 
 -- just checking source table
-SELECT * FROM prep_flights
+-- SELECT * FROM prep_flights
 ---------------------------------------------------
 /* THE ACTUAL QUERY */
 
